@@ -1,0 +1,5 @@
+{
+  "order": 30,
+  "description": "读取 API 定义与字段契约，供完整收集或单独核对使用。",
+  "authPlatforms": ["eolink", "apifox"]
+}

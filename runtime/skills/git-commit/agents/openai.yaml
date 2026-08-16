@@ -1,0 +1,4 @@
+interface:
+  display_name: "受控 Git 提交"
+  short_description: "生成规范 Git 提交并同步去重后的 Tower 开发信息"
+  default_prompt: "Use $spec-git-commit to review, commit, and report the current changes safely."

@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "semantics": [
+    {
+      "id": "tower-read-caches-images",
+      "meaning": "每次读取 Tower 都缓存正文和评论中的普通图片，快速分析必须查看缓存图片并报告失败。",
+      "surfaces": [
+        {
+          "path": "runtime/mcp/requirement/providers/tower/client.py",
+          "ordered": [
+            "async def read_todo",
+            "image_cache = await cache_tower_images(data, url)",
+            "cache_file = write_tower_raw(data, url, image_cache)"
+          ]
+        },
+        {
+          "path": "runtime/skills/requirement-collection/SKILL.md",
+          "all_of": [
+            "每次读取 Tower",
+            "普通图片写入用户缓存",
+            "image_paths"
+          ],
+          "none_of": [
+            "include_images=false"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "complete-collection-uses-unified-tool",
+      "meaning": "完整收集只由 requirement_collect 确定性编排，Agent 不自行拼接来源 MCP。",
+      "surfaces": [
+        {
+          "path": "runtime/mcp/requirement/server.py",
+          "all_of": [
+            "async def requirement_collect",
+            "未确认范围时只返回候选"
+          ]
+        },
+        {
+          "path": "runtime/skills/requirement-collection/SKILL.md",
+          "all_of": [
+            "完整收集只调用统一脚本写来源文件",
+            "Agent 不组合来源 MCP"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "collection-success-auto-analyzes",
+      "meaning": "完整收集成功后默认直接进入 spec-requirement-analysis，不再次询问是否分析。",
+      "surfaces": [
+        {
+          "path": "runtime/mcp/requirement/core.py",
+          "all_of": [
+            "直接使用 ",
+            "spec-requirement-analysis 生成 requirement.md，不再二次询问"
+          ]
+        },
+        {
+          "path": "runtime/skills/requirement-collection/SKILL.md",
+          "all_of": [
+            "完整收集成功后默认连续执行",
+            "自动改用 `spec-requirement-analysis`"
+          ]
+        },
+        {
+          "path": "runtime/skills/requirement-analysis/SKILL.md",
+          "all_of": [
+            "完整收集成功后自动转入"
+          ]
+        },
+        {
+          "path": "runtime/skills/requirement-collection/references/collection-decision-table.md",
+          "all_of": [
+            "| `success` | 用户未要求只收集",
+            "不二次询问是否分析"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "explicit-collection-only-stops",
+      "meaning": "用户在收集前明确只收集或暂不分析时，成功后保留来源并停止。",
+      "surfaces": [
+        {
+          "path": "runtime/mcp/requirement/core.py",
+          "all_of": [
+            "除非用户此前明确要求只收集资料"
+          ]
+        },
+        {
+          "path": "runtime/skills/requirement-collection/SKILL.md",
+          "all_of": [
+            "明确要求“只收集资料”或“暂不分析”时",
+            "收集成功后停止"
+          ]
+        },
+        {
+          "path": "runtime/skills/requirement-collection/references/collection-decision-table.md",
+          "all_of": [
+            "| `success` | 用户此前明确要求只收集或暂不分析"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "collection-partial-pauses",
+      "meaning": "完整收集为 partial 时先暂停，由用户选择重试、跳过、接受缺失或取消。",
+      "surfaces": [
+        {
+          "path": "runtime/mcp/requirement/core.py",
+          "all_of": [
+            "让用户选择重试失败来源、明确跳过，或明确接受现有缺失后分析"
+          ]
+        },
+        {
+          "path": "runtime/skills/requirement-collection/references/collection-decision-table.md",
+          "all_of": [
+            "| `partial` | 写入完成但来源、附件或产物存在 `unresolved` | 是",
+            "不自动分析"
+          ]
+        },
+        {
+          "path": "runtime/skills/requirement-analysis/SKILL.md",
+          "all_of": [
+            "清单整体或单个来源为 `partial` 时",
+            "缺失、失败状态和影响"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "collection-api-selection-pauses",
+      "meaning": "目录或项目 API 链接只写入 api-list.md 时返回 api_selection_required，暂停等用户指定接口；确认前不分析。",
+      "surfaces": [
+        {
+          "path": "runtime/mcp/requirement/core.py",
+          "all_of": [
+            "API_SELECTION_REQUIRED = \"api_selection_required\"",
+            "已写入 api/api-list.md。暂停并让用户从名单指定要收集详情的 api_ids"
+          ]
+        },
+        {
+          "path": "runtime/skills/requirement-collection/references/collection-decision-table.md",
+          "all_of": [
+            "| `api_selection_required` | 已写入 `api-list.md`，尚未确认详情范围 | 是",
+            "不自行挑选接口；不把名单当成字段契约；不转入分析"
+          ]
+        },
+        {
+          "path": "runtime/skills/requirement-collection/SKILL.md",
+          "all_of": [
+            "若返回 `api_selection_required`，先暂停让用户指定接口，确认前不分析"
+          ]
+        },
+        {
+          "path": "runtime/skills/requirement-analysis/SKILL.md",
+          "all_of": [
+            "没有详情 JSON 时跳过 API 部份"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "collection-analysis-write-boundary",
+      "meaning": "收集 Skill 只写来源，分析 Skill 不重新收集且只写 requirement.md。",
+      "surfaces": [
+        {
+          "path": "runtime/skills/requirement-collection/SKILL.md",
+          "all_of": [
+            "本 Skill 不生成 `requirement.md`"
+          ]
+        },
+        {
+          "path": "runtime/skills/requirement-analysis/SKILL.md",
+          "all_of": [
+            "不调用需求、设计稿、API 文档 MCP 或 `requirement_collect` 重新收集",
+            "只生成或更新 `requirement.md`"
+          ]
+        }
+      ]
+    }
+  ]
+}

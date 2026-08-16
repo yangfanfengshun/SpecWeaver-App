@@ -1,0 +1,4 @@
+interface:
+  display_name: "设计实现"
+  short_description: "开发前主动发现设计上下文并按组件查询精确视觉属性完成还原"
+  default_prompt: "Use $spec-design-implementation to implement this requirement from its saved design context."

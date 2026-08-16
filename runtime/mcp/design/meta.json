@@ -1,0 +1,5 @@
+{
+  "order": 20,
+  "description": "读取设计稿候选或统一 schema，供完整收集或单独核对使用。",
+  "authPlatforms": ["lanhu", "figma"]
+}

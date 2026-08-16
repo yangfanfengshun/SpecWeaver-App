@@ -1,0 +1,4 @@
+interface:
+  display_name: "API 文档来源采集"
+  short_description: "读取 API 接口、参数、响应字段、枚举、示例及来源证据"
+  default_prompt: "Use $spec-apidoc-source-collection to collect traceable API evidence from this API source."

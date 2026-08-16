@@ -1,0 +1,4 @@
+interface:
+  display_name: "日报整理"
+  short_description: "跨项目记录并汇总当天已经完成的工作事项"
+  default_prompt: "Use $spec-daily-report to record this task's completed work in today's shared log."

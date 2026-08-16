@@ -1,0 +1,5 @@
+{
+  "order": 10,
+  "description": "读取需求任务与评论，并在此基础上收集设计稿、API 文档来源，生成需求文档。",
+  "authPlatforms": ["tower"]
+}

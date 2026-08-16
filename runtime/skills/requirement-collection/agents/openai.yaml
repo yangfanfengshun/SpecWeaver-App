@@ -1,0 +1,4 @@
+interface:
+  display_name: "需求资料收集"
+  short_description: "确定性收集任务、设计稿和 API 文档来源，成功后自动分析并生成需求文档"
+  default_prompt: "Use $spec-requirement-collection to collect the requirement sources and automatically analyze them after a successful collection."

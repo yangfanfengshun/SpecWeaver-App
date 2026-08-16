@@ -1,0 +1,4 @@
+interface:
+  display_name: "分支合并"
+  short_description: "推送分支、建 MR 合并（默认 test）并追踪流水线"
+  default_prompt: "Use $spec-merge to push the current branch, merge it into the target branch, and track the pipeline."
