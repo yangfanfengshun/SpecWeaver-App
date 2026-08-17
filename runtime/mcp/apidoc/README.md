@@ -45,7 +45,7 @@ runtime/mcp/apidoc/providers/<name>/
 | 工具面 | `apidoc/server.py` | **零改动** |
 | 中立信封 | `apidoc/schema.py` | 缺字段才扩，两边 mapper 一起改 |
 | 名单落盘 | `apidoc/catalog.py` | **零改动**（折成 `api/api-list.md`） |
-| 完整收集 | `apidoc/source.py`、`requirement/core.py` | **零改动**（`provider_of("apidoc", url)`） |
+| 完整收集 | `apidoc/source.py` | **零改动**（`provider_of("apidoc", url)`） |
 
 禁止在公共代码里写 `from apidoc.providers.postman import ...`。
 删目录 = 下线该平台；旧缓存里的链接走 `no_provider`，不崩溃，也不静默丢。

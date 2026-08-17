@@ -10,7 +10,7 @@ provider 契约：`providers/<name>/__init__.py` 必须暴露
 - `PLATFORM: str` — 平台名（与认证配置、返回体里的 platform 字段一致）
 - `claims_url(url: str) -> bool` — 这条链接归不归我
 
-其余接口按能力各自约定（见各能力 core.py 的调用点）。
+其余接口按能力各自约定（见各能力 `source.py` / `core.py` 的调用点）。
 """
 from __future__ import annotations
 
@@ -64,6 +64,23 @@ def resolve_provider(
     if len(providers) == 1:
         return next(iter(providers.items()))
     return None
+
+
+def provider_of(capability: str, url: str = "") -> ModuleType | None:
+    """按链接取某个能力当前认领它的 provider；没人认领且无法兜底时为 None。"""
+    return_value = resolve_provider(discover_providers(capability), url)
+    return return_value[1] if return_value else None
+
+
+def no_provider_result(capability: str, url: str = "") -> dict[str, str]:
+    return {
+        "status": "no_provider",
+        "message": (
+            f"{capability} 能力当前没有 provider 认领该链接：{url}"
+            if url
+            else f"{capability} 能力当前没有可用的 provider"
+        ),
+    }
 
 
 def discover_capabilities(exclude: frozenset[str] | set[str] = frozenset()) -> list[str]:

@@ -44,14 +44,18 @@ from requirement.providers.tower.cache import (
 )
 from requirement.providers.tower.parsing import (
     TOWER_BASE,
+    MEMBER_LIST_STATUS,
     collect_external_links,
     parse_comment_context,
+    parse_member_todo_items,
+    parse_member_todo_url,
     parse_stream_response,
     parse_todo,
     build_attachment_occurrences,
     build_image_occurrences,
     text_to_comment_html,
     unique_attachments,
+    validate_tower_member_todo_url,
     validate_tower_todo_url,
 )
 from requirement.providers.tower.auth import (
@@ -339,6 +343,15 @@ async def expand_stream_fragments(soup: BeautifulSoup) -> int:
 
     await expand(soup)
     return stream_count
+
+
+async def load_member_todo_list(url: str) -> tuple[BeautifulSoup, int]:
+    response = await request(url)
+    if is_login_page(response):
+        raise RuntimeError("Tower Cookie 已过期，请在 SpecWeaver 设置页重新配置 Tower 后重试")
+    soup = await asyncio.to_thread(BeautifulSoup, response.text, "lxml")
+    stream_count = await expand_stream_fragments(soup)
+    return soup, stream_count
 
 
 async def load_todo_data(url: str) -> dict:
@@ -691,6 +704,51 @@ async def read_todo(url: str) -> dict[str, Any]:
     except Exception as error:
         return tool_error(error)
     return tower_read_summary(data, cache_file, image_cache)
+
+
+async def list_member_todos(url: str) -> dict[str, Any]:
+    """读取成员任务清单最小集，不读正文、不写缓存。"""
+    if not tower_cookie():
+        return {
+            "status": "missing_config",
+            "platform": "tower",
+            "message": "未设置 TOWER_COOKIE",
+        }
+    url_error = validate_tower_member_todo_url(url)
+    if url_error:
+        return {
+            "status": "invalid_input",
+            "platform": "tower",
+            "message": url_error,
+        }
+    try:
+        list_url, member_guid, kind = parse_member_todo_url(url)
+        soup, stream_count = await load_member_todo_list(list_url)
+        items = await asyncio.to_thread(
+            parse_member_todo_items,
+            soup,
+            status=MEMBER_LIST_STATUS[kind],
+        )
+    except Exception as error:
+        return tool_error(error)
+
+    unresolved: list[str] = []
+    if kind == "all":
+        unresolved.append("all 清单不按任务区分完成状态，status 为「未提供」")
+    if stream_count:
+        unresolved.append(f"已展开 {stream_count} 个延迟加载区间")
+    if not items:
+        unresolved.append("未解析到任务卡片，页面结构可能已变化或清单为空")
+    return {
+        "status": "partial" if not items else "success",
+        "platform": "tower",
+        "message": "未解析到任务卡片" if not items else f"已读取 {len(items)} 条任务",
+        "list_url": list_url,
+        "member_guid": member_guid,
+        "count": len(items),
+        "items": items,
+        "unresolved": unresolved,
+    }
 
 
 async def download_images(url: str, output_dir: str) -> dict[str, Any]:

@@ -51,6 +51,22 @@ async def requirement_read_todo(url: str) -> dict[str, Any]:
 
 
 @mcp.tool()
+async def requirement_list_member_todos(url: str) -> dict[str, Any]:
+    """读取成员任务清单最小集，不读正文、评论或附件，也不写入缓存。"""
+    provider = _provider(url)
+    if provider is None:
+        return _no_provider(url)
+    list_fn = getattr(provider, "list_member_todos", None)
+    if list_fn is None:
+        return {
+            "status": "not_applicable",
+            "platform": getattr(provider, "PLATFORM", ""),
+            "message": "当前平台不支持成员任务清单",
+        }
+    return await list_fn(url)
+
+
+@mcp.tool()
 async def requirement_download_images(url: str, output_dir: str) -> dict[str, Any]:
     """下载任务正文和全部评论中的附件图片，并返回本地文件与来源映射。"""
     provider = _provider(url)

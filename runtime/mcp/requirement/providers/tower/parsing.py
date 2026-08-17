@@ -20,6 +20,16 @@ import mistune
 TOWER_BASE = "https://tower.im"
 URL_PATTERN = re.compile(r"https?://[^\s<>()\[\]{}\"']+")
 BUG_TAGS = {"bug"}
+MEMBER_TODO_URL_PATTERN = re.compile(
+    r"^/members/(?P<guid>[0-9a-f]{32})/todos/"
+    r"(?P<kind>uncompleted|completed|all)/?$",
+    re.I,
+)
+MEMBER_LIST_STATUS = {
+    "uncompleted": "未完成",
+    "completed": "已完成",
+    "all": "未提供",
+}
 
 markdown_to_html = mistune.create_markdown(
     escape=True,
@@ -156,7 +166,108 @@ def validate_tower_todo_url(url: str) -> str | None:
         return "请提供 Tower HTTPS 任务链接"
     if parsed.netloc.lower() not in {"tower.im", "www.tower.im"} or "/todos/" not in parsed.path:
         return "请提供有效的 Tower 任务链接"
+    if MEMBER_TODO_URL_PATTERN.match(parsed.path):
+        return "请提供 Tower 单条任务链接，而不是成员任务清单"
     return None
+
+
+def validate_tower_member_todo_url(url: str) -> str | None:
+    parsed = urlparse(url)
+    if parsed.scheme != "https":
+        return "请提供 Tower HTTPS 链接"
+    if parsed.netloc.lower() not in {"tower.im", "www.tower.im"}:
+        return "请提供有效的 Tower 链接"
+    if not MEMBER_TODO_URL_PATTERN.match(parsed.path):
+        return (
+            "请提供 Tower 成员任务清单链接"
+            "（路径形如 /members/{guid}/todos/uncompleted/）"
+        )
+    return None
+
+
+def parse_member_todo_url(url: str) -> tuple[str, str, str]:
+    """返回规范化清单 URL、成员 GUID、清单种类。"""
+    parsed = urlparse(url)
+    match = MEMBER_TODO_URL_PATTERN.match(parsed.path)
+    if match is None:
+        raise ValueError("请提供 Tower 成员任务清单链接")
+    guid = match.group("guid").lower()
+    kind = match.group("kind").lower()
+    return (
+        f"{parsed.scheme}://{parsed.netloc}/members/{guid}/todos/{kind}/",
+        guid,
+        kind,
+    )
+
+
+def parse_member_todo_card(
+    card,
+    *,
+    group_name: str = "未提供",
+    status: str = "未完成",
+) -> dict | None:
+    """从 tr-todo-item-plus 卡片提取最小集字段。"""
+    todo_id = str(card.get("guid") or card.get("data-guid") or "").strip()
+    if not todo_id:
+        return None
+    title_anchor = card.select_one("a.todo-rest")
+    title = text_of(title_anchor).strip() if title_anchor else ""
+    if len(title) > 200:
+        title = title[:200].rstrip() + "..."
+    if not title:
+        title = "未提供"
+    detail_path = str(card.get("todo-detail-url") or "").strip()
+    if detail_path:
+        item_url = urljoin(TOWER_BASE, detail_path)
+    else:
+        href = str(title_anchor.get("href") or "").strip() if title_anchor else ""
+        item_url = urljoin(TOWER_BASE, href) if href else f"{TOWER_BASE}/todos/{todo_id}"
+    tags: list[str] = []
+    for item in card.select(
+        "[data-tag-name], [data-label-name], .todo-label, .todo-tag"
+    ):
+        value = str(
+            item.get("data-tag-name") or item.get("data-label-name") or ""
+        ).strip() or text_of(item)
+        if value and value not in tags:
+            tags.append(value)
+    due_date = ""
+    due_anchor = card.select_one("a.todo-due-at tr-readable-datetime")
+    if due_anchor:
+        due_date = str(due_anchor.get("date") or "").strip()
+    project_el = card.select_one(".label.todo-project")
+    project_name = text_of(project_el).strip() if project_el else ""
+    return {
+        "todo_id": todo_id,
+        "title": title,
+        "url": item_url,
+        "status": status,
+        "task_type": task_type_from_tags(tags),
+        "tags": tags,
+        "group": group_name or "未提供",
+        "project": project_name or "未提供",
+        "due_date": due_date,
+    }
+
+
+def parse_member_todo_items(soup: BeautifulSoup, *, status: str) -> list[dict]:
+    items: list[dict] = []
+    seen: set[str] = set()
+
+    def add_card(card, group_name: str) -> None:
+        item = parse_member_todo_card(card, group_name=group_name, status=status)
+        if not item or item["todo_id"] in seen:
+            return
+        seen.add(item["todo_id"])
+        items.append(item)
+
+    for group in soup.select("tr-todos-group"):
+        group_name = text_of(group.select_one(".group-name")).strip() or "未提供"
+        for card in group.select("tr-todo-item-plus.todo-plus"):
+            add_card(card, group_name)
+    for card in soup.select("tr-todo-item-plus.todo-plus"):
+        add_card(card, "未提供")
+    return items
 
 
 def parse_comment_context(html: str) -> tuple[dict[str, str], str]:

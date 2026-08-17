@@ -57,7 +57,7 @@ def mcp_initialize_body() -> dict[str, Any]:
         "params": {
             "protocolVersion": "2025-03-26",
             "capabilities": {},
-            "clientInfo": {"name": "specweaver", "version": "0.1.3"},
+            "clientInfo": {"name": "specweaver", "version": "0.1.4"},
         },
     }
 

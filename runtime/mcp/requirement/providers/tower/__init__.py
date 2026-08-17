@@ -31,6 +31,7 @@ from requirement.providers.tower.client import (  # noqa: E402
     add_comment,
     check_auth,
     download_images,
+    list_member_todos,
     load_todo_data,
     read_todo,
     tower_cookie,
@@ -41,6 +42,7 @@ from requirement.providers.tower.parsing import (  # noqa: E402
     parse_tags,
     parse_todo,
     task_type_from_tags,
+    validate_tower_member_todo_url as validate_member_todo_url,
     validate_tower_todo_url as validate_todo_url,
 )
 

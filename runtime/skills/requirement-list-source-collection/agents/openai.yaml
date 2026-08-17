@@ -1,0 +1,4 @@
+interface:
+  display_name: "成员任务清单采集"
+  short_description: "读取 Tower 成员任务清单最小集，不读正文、不写缓存"
+  default_prompt: "Use $spec-requirement-list-source-collection to list member todos from this Tower URL."
