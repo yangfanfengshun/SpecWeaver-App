@@ -14,6 +14,10 @@ description: 分析已经由 SpecWeaver 收集并验证的需求任务、设计�
 - 不修改 `requirement-raw.md`、缓存清单、附件、设计结构或 API 原始文件。
 - 只生成或更新 `requirement.md`，不生成 `api.md`、`design-context.json` 或开发计划。
 - 不把推断写成来源事实；不确定、冲突和缺失必须单列。
+- 分析结束后必须询问是否对照知识库制订开发计划；在用户明确同意前，不调用
+  `spec-knowledge-plan`，不写 `dev-plan.md`，不开始开发。用户同意但当前对话里
+  没有这张 Skill 时，提示去 SpecWeaver Skills 页打开它，仍不得在本 Skill 里
+  写计划或读 `.knowledge`。
 
 开始前完整读取 [需求文档模板](references/requirement-template.md)。
 
@@ -91,4 +95,14 @@ requirement-raw.md
 4. 文档没有 Cookie、密码、Token、Authorization 或登录响应；
 5. `requirement.md` 之外的来源文件没有被修改。
 
-验证通过后报告文档路径、采用来源、主要冲突和缺失，然后停止。
+验证通过后报告文档路径、采用来源、主要冲突和缺失。
+
+然后必须问一句：是否对照当前项目知识库制订开发计划。冲突或缺失还没确认完时，先提醒
+把这些对齐，再问要不要出计划。用户没明确说要，就停在这里。
+
+用户同意后：
+
+1. 当前对话能用 `spec-knowledge-plan`：不要在本 Skill 里写计划或读 `.knowledge`
+   原文；转交它，由主对话派一次 Subagent 去写 `dev-plan.md`。
+2. 找不到这张 Skill：停下来告诉用户去 SpecWeaver Skills 页打开「对照知识库写开发
+   计划」，分析到此结束。不得自己写 `dev-plan.md`，不得读 `.knowledge` 原文。

@@ -1,0 +1,4 @@
+interface:
+  display_name: "初始化项目知识库"
+  short_description: "在仓库根建立 .knowledge；Umi/Antd 与 Taro 对着入口表填卡，其它项目摸代码建库"
+  default_prompt: "使用 $spec-knowledge-init 为当前项目建立 .knowledge 知识库。先跑入口探针：有路由表就对着表填卡，没有就摸代码建库。"

@@ -140,7 +140,7 @@ def parse_daily_log(content: str) -> list[tuple[str, list[tuple[str, list[str]]]
 def render_plain_text(content: str) -> str:
     blocks = []
     for project, requirements in parse_daily_log(content):
-        lines = [f"### {project}"]
+        lines = [f"## {project}"]
         for order, (requirement, completed) in enumerate(requirements, start=1):
             lines.append(f"{order}.{requirement}")
             lines.extend(
