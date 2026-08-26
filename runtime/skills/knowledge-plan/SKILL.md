@@ -16,7 +16,7 @@ description: 查阅当前仓库 .knowledge，必要时写出开发计划。同�
 3. 给子 Agent 的说明里写清：
    - 你是计划 Subagent，遵循本 Skill 后半段，**禁止再派 Subagent**
    - 需求：有 `requirement.md` 给路径；没有就把本对话需求**压缩成一段摘要**带上（不要贴整段闲聊）
-   - 写出与需求文件同目录（或仓库根）的 `dev-plan.md` 五节
+   - 把五节 `dev-plan.md` 写到 SpecWeaver 缓存，不要写进用户仓库
 4. 子 Agent 返回后：把「不明确」问用户；计划不对再派一次，带上哪里错了
 
 用户只是问项目里某能力怎么写、查一下知识库，没说要开发：可以在本对话快速查，不必派。
@@ -27,7 +27,7 @@ description: 查阅当前仓库 .knowledge，必要时写出开发计划。同�
 
 ## 边界
 
-- 不修改 `src/` 等业务代码，不改 `.knowledge/`，不 `git add`、不提交
+- 不修改 `src/` 等业务代码，不改 `.knowledge/`，不在用户仓库写 `dev-plan.md`，不 `git add`、不提交。开发完成后回写知识库走 `spec-knowledge-update`
 - 不重写需求分析，不发明接口字段
 - 需求来源按有什么用什么：`requirement.md` → 主 Agent 给的摘要 → 当前对话。不要因为没有分析 md 就停工
 - 作为 Subagent 被派来准备开发：必须写出五节 `dev-plan.md`。拿不准的进「不明确」，不要写成步骤，不要追问用户
@@ -61,7 +61,15 @@ python3 <本Skill目录>/scripts/query.py --cwd <git根> <tag1> <tag2> ...
 
 ## 3. 写计划（Subagent 准备开发时必走）
 
-写到 `requirement.md` 同目录；没有分析 md 就写到仓库根。文件名 `dev-plan.md`。第一版颗粒要细，能按步骤动手；写代码时仍应按「引用」打开原文，不能只盯子弹。
+计划不给用户看，不进用户仓库，也不进 `.knowledge/`。有 `requirement.md` 只读它当需求来源，不要在旁边落文件。
+
+写到 SpecWeaver 缓存，目录不存在就建；同一仓库反复出计划直接覆盖：
+
+```text
+~/.specweaver/cache/knowledge-plan/<仓库名>/dev-plan.md
+```
+
+`<仓库名>` 用 Git 根目录名。设置了 `SPECWEAVER_HOME` 时改用该目录下的 `cache/knowledge-plan/<仓库名>/dev-plan.md`。文件名固定 `dev-plan.md`。第一版颗粒要细，能按步骤动手；写代码时仍应按「引用」打开原文，不能只盯子弹。
 
 固定五节，标题用下面这些：
 
@@ -110,6 +118,6 @@ python3 <本Skill目录>/scripts/query.py --cwd <git根> <tag1> <tag2> ...
 
 写了计划则再返回：
 
-- `dev-plan.md` 的绝对路径
+- `dev-plan.md` 的绝对路径（在 SpecWeaver 缓存，不在用户仓库）
 - 命中了哪些卡片 id（或「无知识库，已摸代码」）
 - 「不明确」是否非空（非空则先问用户，不要直接开工）

@@ -1,0 +1,4 @@
+interface:
+  display_name: "沉淀项目知识库"
+  short_description: "开发完成后纠偏或新增 .knowledge 卡片，直接写入，不改业务代码"
+  default_prompt: "使用 $spec-knowledge-update 根据本轮开发，把需要纠偏和新增的知识直接写入当前仓库 .knowledge。"

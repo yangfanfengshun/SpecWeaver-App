@@ -9,7 +9,7 @@ description: 在当前仓库根目录建立 .knowledge 知识库，供后续开�
 
 - 只在当前 Git 仓库根目录创建或更新 `.knowledge/`。
 - 不把本项目正文写进 SpecWeaver 插件；插件只提供本 Skill 和查询用法。
-- 不修改 `src/` 业务代码。已有 `.knowledge/` 时先报告现状，得到确认再覆盖或增量。
+- 不修改 `src/` 业务代码。已有 `.knowledge/` 时先报告现状，得到确认再覆盖或增量。日常纠偏和新功能入库走 `spec-knowledge-update`，不要拿本 Skill 当日常沉淀。
 - 抽不出证据的业务事实不要写成卡片，标「待确认」或留缺口。
 - 未经用户明确要求，不 `git add`、不提交。确保 `.knowledge/` 未被 `.gitignore` 忽略即可。
 - 脚本只倒入口表，不评判、不写 `.knowledge`。卡片仍由本 Skill 写。

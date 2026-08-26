@@ -1,4 +1,4 @@
 interface:
   display_name: "对照知识库写开发计划"
   short_description: "根据 requirement.md 查 .knowledge 并写出开发计划，不改业务代码"
-  default_prompt: "使用 $spec-knowledge-plan 查阅当前仓库知识库；若要开发计划，对照需求写出 dev-plan.md。"
+  default_prompt: "使用 $spec-knowledge-plan 查阅当前仓库知识库；若要开发计划，把五节计划写到 SpecWeaver 缓存，不要写进用户仓库。"
