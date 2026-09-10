@@ -1,6 +1,6 @@
 ---
 name: spec-git-commit
-description: 审查当前 Git 改动、选择明确范围、执行必要验证并生成 Conventional Commits 格式的提交；提交正文记录 Tower 链接、改动内容和验证结果，有关联 Tower 时预览并在用户确认后发布包含当前分支与提交 HEAD 的去重评论。用户要求提交、生成 commit message、按 Tower 需求提交或把分支与提交同步到 Tower 时使用。不创建 PR、不合并分支、不推送、不发布版本。
+description: 审查当前 Git 改动、选择明确范围并生成 Conventional Commits 格式的提交；提交正文记录 Tower 链接、改动内容和验证结果。仅在用户明确要求把分支与提交同步到 Tower 时发布评论。用户要求提交、生成 commit message、按 Tower 需求提交或把分支与提交同步到 Tower 时使用。不创建 PR、不合并分支、不推送、不发布版本。
 ---
 
 # 受控 Git 提交
@@ -11,7 +11,10 @@ description: 审查当前 Git 改动、选择明确范围、执行必要验证�
 - 不修改代码来“美化提交”；发现问题时先报告。
 - 不执行 `git push`、创建 PR、合并、变基或发布版本。第 6 节只是把这些能力
   **告诉**用户，本 Skill 内不得执行其中任何一项。
-- Tower 评论是外部写操作：默认只预览，取得用户明确确认后才能发布。
+- 普通「提交」「帮我提交」只 commit，不发 Tower 评论。提交正文里的
+  `Tower: <链接>` 不是发评论。
+- 仅当用户明确说同步/评论到 Tower（含「提交并同步到 Tower」）时才发布评论。
+  不预览、不去重、不调用 `requirement_read_todo`。
 - 不泄露 Cookie、密码、Token、`.env` 或其他敏感内容。
 
 ## 1. 确认提交范围
@@ -23,7 +26,12 @@ description: 审查当前 Git 改动、选择明确范围、执行必要验证�
 
 ## 2. 验证改动
 
-运行与提交范围直接相关的最小充分验证。优先使用仓库已有测试、格式检查和清单校验。记录每条命令及结果；无法运行时说明原因，不写“已通过”。验证失败时默认停止提交并报告，除非用户明确要求带失败结果提交。
+提交时默认不新开测试套件（不跑仓库里的 lint、单测、`verify` 等）。
+
+- 对话里已经跑过的检查，把命令和真实结果写进提交正文的「验证结果」。
+- 没跑过就写「未运行：提交时不默认跑测试」，不要为了填这一栏去跑。
+- 只有用户明确说「提交前跑测试」时才运行与提交范围相关的测试；失败则默认停止提交并报告，除非用户要求带失败结果提交。
+- 暂存后仍执行 `git diff --cached --check`。无法运行时说明原因，不写“已通过”。
 
 ## 3. 生成提交信息
 
@@ -63,39 +71,33 @@ Tower: <Tower 链接或“无”>
 ## 4. 暂存与提交
 
 1. 使用明确文件路径暂存本次范围；不要使用可能包含无关文件的宽泛命令。
-2. 再次检查 `git diff --cached --check` 和 `git diff --cached`。
+2. 执行 `git diff --cached --check`，再看一眼 `git diff --cached` 确认范围。
 3. 执行一次非交互式提交。
 4. 读取 `git rev-parse --abbrev-ref HEAD` 和 `git rev-parse HEAD`，确认提交真实存在。
 5. 向用户报告提交标题、完整 HEAD、包含文件和验证结果。
 
+用户只要求提交时，做完本节就进入第 6 节，不要进入第 5 节。
+
 ## 5. 同步 Tower 开发信息
 
-仅在提交已成功且存在唯一关联 Tower 链接时执行：
+仅在用户明确要求同步/评论到 Tower 时执行。已经提交、只要求同步时跳过第 1–4 节，使用当前分支与 HEAD。
 
-1. 使用 `requirement_read_todo(url)` 更新 Tower 原始缓存，再读取结果中
-   `cache_file` 的全部独立评论。
-2. 生成唯一标记：
-
-```text
-SpecWeaver-Commit: <branch>@<full-head>
-```
-
-3. 如果任一既有评论包含完全相同标记，报告“已存在”，不得重复发布。
-4. 否则生成评论：
+1. 必须有唯一关联 Tower 链接；不能唯一确认时询问，不能凭任务名称猜链接。
+2. 项目名取当前仓库根目录名（`git rev-parse --show-toplevel` 的最后一段），
+   不要用 Tower 项目名。
+3. 生成评论并直接发布，`requirement_add_comment(url, content, dry_run=false)`。
+   不要 `dry_run=true`，不要先读任务、不要下图、不要为去重通读评论，
+   不要发完再采集核对。同一提交被明确要求两次，允许出现两条评论。
 
 ```text
+项目：<project>
 开发分支：<branch>
 提交 HEAD：<full-head>
-SpecWeaver-Commit: <branch>@<full-head>
+SpecWeaver-Commit: <project>/<branch>@<full-head>
 ```
 
-5. 调用 `requirement_add_comment(url, content, dry_run=true)` 展示最终预览并暂停。返回
-   `status` 为 `preview` 表示评论**还没有发布**，不得据此声称已同步。
-6. 用户明确确认目标 Tower 和内容后，调用 `requirement_add_comment(url, content, dry_run=false)`；
-   只有返回 `status` 为 `success` 才说明评论真的发出去了。
-7. 发布后重新读取评论，确认唯一标记存在；没有证据时不得声称同步完成。
-
-Tower 认证失效时提示用户打开 SpecWeaver 设置页重新配置 Tower，保留已完成的 Git 提交，并在认证恢复后只重试 Tower 同步步骤。
+4. 只有返回 `status` 为 `success` 才说明评论真的发出去了。认证失效时提示用户
+   打开 SpecWeaver 设置页重新配置 Tower，保留已完成的 Git 提交，认证恢复后只重试本节。
 
 ## 6. 完成后的提示
 
@@ -105,13 +107,15 @@ Tower 认证失效时提示用户打开 SpecWeaver 设置页重新配置 Tower�
 | 条件 | 提示内容 |
 | --- | --- |
 | 远端没有当前分支，或本地领先远端 | 可以帮忙推送并合并进 test |
+| 存在关联 Tower 链接，且本节未发 Tower 评论 | 可以说一声同步到 Tower |
 | 存在关联 Tower 链接 | 可以把这次改动记进今天的日报 |
 | 本次提交含实现文件（如 `src/`、`client/`、`pages/`），且没有 `.knowledge/` | 可以把这次约定或新入口沉淀进知识库 |
 
 判断规则：
 
 - 条件不成立的条目**整条不出现**。已经和远端同步过就别提推送，没有关联 Tower
-  就别提日报，提交里已经带了 `.knowledge/` 或根本没改实现就别提沉淀——每次都念一遍完整菜单，用户两次之后就不看这段了。
+  就别提同步和日报，本节已经发过 Tower 评论就别再提同步，提交里已经带了
+  `.knowledge/` 或根本没改实现就别提沉淀——每次都念一遍完整菜单，用户两次之后就不看这段了。
 - 不为了决定提不提示而追问用户「这次改动关联哪个 Tower」。第 1 节为了写进提交
   正文已经识别过，用那个结果；没识别到就当没有。
 - 所列条件都不成立时，报告完直接结束，不输出提示段落。
@@ -123,6 +127,7 @@ Tower 认证失效时提示用户打开 SpecWeaver 设置页重新配置 Tower�
 
 还可以帮你做：
 - 推送并合并进 test（本地有 3 个提交没推上去）
+- 同步到 Tower
 - 把这次改动记进今天的日报
 
 说一声就行。
