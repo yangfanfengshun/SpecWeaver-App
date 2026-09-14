@@ -10,7 +10,7 @@ description: 仅 GitLab。合到 test 线撞冲突时在本机解：fetch、chec
 ## 边界
 
 - **只适用于 GitLab。** GitHub 或看不出是 GitLab 时停下，不要改走 `gh`。
-- 目标是当前线的 test（命中 flavor 用它的 `test`，否则 `test`）。
+- 目标默认 `test`。仓库根 `.specweaver.yml` 写了 `test`，就用那个名字替换。
 - **master / main 系列一律拒绝**（含 `master_yz` 等变体）。用户坚持也不绕道。
 - `git merge --no-ff` 爆冲突之后**先问用户谁来改**（用户自己 / Agent），没点头不动冲突文件。
 - 不盯流水线、不读 GitLab、不 `--force` 推送、不合主干。
@@ -33,16 +33,9 @@ git rev-parse --abbrev-ref HEAD
 git rev-parse --show-toplevel
 ```
 
-记下当前分支为**开发分支**（若用户指定了源分支，用用户的）。当前已经在目标 test 上：停下，不能自我合并。
+记下当前分支为**开发分支**（若用户指定了源分支，用用户的）。
 
-读仓库根 `.specweaver.yml`（没有则目标 `test`）：
-
-1. 开发分支整串等于某条 `master` 或 `test` → 那条 flavor。
-2. 否则在开发分支名里找 `-{slug}-`，**最长 slug 先中**。
-3. 否则用户原话整串等于某个 `type` 或 `aliases`。
-4. 对不上或对上多条：问用户合进哪条 test，列出表，不准猜。
-
-命中后目标是 flavor.test。不要读 `taro-ci.config.js`。
+默认目标 `test`。仓库根有 `.specweaver.yml` 且写了 `test`，用文件里的名字替换，不要按分支名挑选。当前已经在目标分支上：停下，不能自我合并。
 
 ## 2. 本机合进 test
 

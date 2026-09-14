@@ -12,8 +12,7 @@ description: 仅 GitLab。从 Issue 拉开发分支：先建 Issue（或用已�
 - **只适用于 GitLab。** GitHub 或看不出是 GitLab 时停下，不要改走 `gh`。
 - 只建 Issue 和远端分支，然后本机 fetch / checkout。不提交、不 push、不合、不建 MR。
 - 不要用 `glab mr for` / `glab mr create --related-issue`（那是分支+MR）。
-- 源分支是该线的 master（有配置且命中 flavor 用它的 `master`，否则 `master`），
-  不要从当前 HEAD 拉。用户明确指定源时用用户的。
+- 源分支默认 `master`。仓库根有 `.specweaver.yml` 且写了 `master`，就用文件里的名字替换，不要从当前 HEAD 拉。用户明确指定源时用用户的。
 - 工作区不干净则停下，不 stash、不把别人的改动捎进新分支。
 - 不泄露 Token、Cookie、`.env` 或完整认证响应。缺 `glab` 时停下，让用户看命令提示。
 
@@ -29,21 +28,26 @@ git status --porcelain
 - 其它：`glab repo view` 成功则继续，否则停下。
 - `git status --porcelain` 非空：停下，先让用户处理未提交改动。
 
-## 1. 当前线（flavor）
+## 1. master / test 映射
 
 ```bash
 git rev-parse --show-toplevel
 ```
 
-读仓库根 `.specweaver.yml`。没有该文件：源分支 `master`，标题不加 slug。
+读仓库根 `.specweaver.yml`。没有文件或是空的：源分支 `master`，标题不加 slug。
+有内容就当替换表，**不要挑选、不要猜**：
 
-有文件时按顺序**唯一**命中一条，命中后源分支用它的 `master`，标题要带它的 `slug`：
+- 写了 `master`：拉分支的源用这个名字，不再用 `master`
+- 写了 `test`：本 Skill 不用它；合并/冲突走文件里的 `test`
+- 写了 `slug`：Issue 标题带上它
+- `aliases` 只是给人看的，不参与选择
 
-1. 用户原话整串等于某个 `type` 或 `aliases`（如 `weapp`、`驿站微信`）。
-2. 用户已给的标题或当前分支名里出现 `-{slug}-`，**最长 slug 先中**。
-3. 对不上或对上多条：列出 `type` / `aliases` / `slug` 问用户，不准默认 `weapp`。
-
-不要读 `taro-ci.config.js`，不要自己 `split('_')` 推 type。
+```yaml
+aliases: [驿站微信, 驿站-微信]
+master: master_yz
+test: test_yz
+slug: weapp-yz
+```
 
 ## 2. Issue 标题
 
@@ -52,7 +56,7 @@ git rev-parse --show-toplevel
 
 1. 用户给 topic（或整段标题）。已有 Issue 编号/链接则跳过本节，用 Issue 现成标题，不改名。
 2. 去掉末尾已有的 `-yf`（避免重复）。
-3. 当前 flavor 有 `slug`，且标题里还没有这段连续 slug：在末尾加上 `-{slug}`。
+3. 文件里写了 `slug`，且标题里还没有这段连续 slug：在末尾加上 `-{slug}`。
 4. 加上 `-yf`。这是开发者标记，不能省。
 5. 描述、标签、指派人不问、不填，除非用户写了。
 

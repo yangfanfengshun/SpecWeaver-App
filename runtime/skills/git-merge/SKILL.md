@@ -11,9 +11,7 @@ Agent 只做两件事：看要不要推送，然后在用户看得见的 IDE 终
 ## 边界
 
 - **只适用于 GitLab。** 先检查远端，GitHub 或看不出是 GitLab 时停下说明，不要改走 `gh` / PR。
-- 目标分支默认是当前线的 test（有 `.specweaver.yml` 且能唯一命中 flavor 时用它的 `test`，
-  例如 `test_yz`；否则 `test`）。用户给出完整分支名时用用户的。
-- 用户说「合到 test」且已唯一命中 flavor：目标是 **flavor.test**，不是字面分支名 `test`。
+- 目标分支默认 `test`。仓库根 `.specweaver.yml` 写了 `test`，就用那个名字替换（用户说「合到 test」也是换成映射后的名字，不是字面分支 `test`）。用户给出完整分支名时用用户的。
 - **master / main 系列一律拒绝**（含 `master-xxx`、`master_xxx`、`main` 等变体，
   包括 `master_yz`）：合进主干等于上线，必须到 GitLab 网页端人工创建 MR 走审核。
   用户坚持时也不绕道——不要改用 `glab` 直调、也不要手工 `git merge` 后推送。
@@ -40,14 +38,9 @@ git rev-parse --show-toplevel
 git rev-parse --abbrev-ref HEAD
 ```
 
-读仓库根 `.specweaver.yml`（没有就当传统 `master` / `test`）：
+默认目标 `test`。仓库根有 `.specweaver.yml` 且写了 `test`，用文件里的名字替换，不要按分支名挑选。用户指定了完整分支名则覆盖。
 
-1. 当前分支整串等于某条 `master` 或 `test` → 那条 flavor。
-2. 否则在分支名里找 `-{slug}-`，**最长 slug 先中**。
-3. 否则用户原话整串等于某个 `type` 或 `aliases`。
-4. 对不上或对上多条：默认目标 `test`；有多条 flavor 时列出表来问，不准猜成 `weapp`。
-
-命中 flavor 后，默认 `--target` 用它的 `test`。用户指定了完整分支名则覆盖。
+换目标时 `sw merge --target <这个名字>`。
 
 ## 2. 要不要推送
 
