@@ -14,6 +14,7 @@ description: 仅 GitLab。合到 test 线撞冲突时在本机解：fetch、chec
 - **master / main 系列一律拒绝**（含 `master_yz` 等变体）。用户坚持也不绕道。
 - `git merge --no-ff` 爆冲突之后**先问用户谁来改**（用户自己 / Agent），没点头不动冲突文件。
 - 不盯流水线、不读 GitLab、不 `--force` 推送、不合主干。
+- 调 GitLab API 一律 `sw glab ...`，不要直接 `glab`。不要 `glab auth login`，不要读、不要 `source` `~/.specweaver/.env`。
 - 不泄露 Token、Cookie、`.env` 或完整认证响应。
 
 ## 0. 是不是 GitLab
@@ -24,7 +25,7 @@ git remote get-url origin
 
 - URL 含 `github.com`：停下，说明本 Skill 只适用于 GitLab。
 - URL 含 `gitlab`：继续。
-- 其它：`glab repo view` 成功则继续，否则停下。
+- 其它：`sw glab repo view` 成功则继续，否则停下。
 
 ## 1. 开发分支和 test 线
 
@@ -73,4 +74,4 @@ git commit --no-edit
 git push origin <test 线>
 ```
 
-不要 `--force`。跟用户说已推到 `<test 线>`，流水线远端自己跑，不要 `glab ci`、不要等。
+不要 `--force`。跟用户说已推到 `<test 线>`，流水线远端自己跑，不要 `sw glab ci`、不要等。

@@ -11,10 +11,11 @@ description: 仅 GitLab。从 Issue 拉开发分支：先建 Issue（或用已�
 
 - **只适用于 GitLab。** GitHub 或看不出是 GitLab 时停下，不要改走 `gh`。
 - 只建 Issue 和远端分支，然后本机 fetch / checkout。不提交、不 push、不合、不建 MR。
-- 不要用 `glab mr for` / `glab mr create --related-issue`（那是分支+MR）。
+- 不要用 `sw glab mr for` / `sw glab mr create --related-issue`（那是分支+MR）。
 - 源分支默认 `master`。仓库根有 `.specweaver.yml` 且写了 `master`，就用文件里的名字替换，不要从当前 HEAD 拉。用户明确指定源时用用户的。
 - 工作区不干净则停下，不 stash、不把别人的改动捎进新分支。
-- 不泄露 Token、Cookie、`.env` 或完整认证响应。缺 `glab` 时停下，让用户看命令提示。
+- 调 GitLab API 一律 `sw glab ...`，不要直接 `glab`。不要 `glab auth login`，不要读、不要 `source` `~/.specweaver/.env`。
+- 不泄露 Token、Cookie、`.env` 或完整认证响应。缺 `sw` 时说明它随 SpecWeaver App 分发；缺 `glab` 或提示 GitLab 尚未配置时，让用户看命令提示去 App 设置页。
 
 ## 0. 是不是 GitLab
 
@@ -25,7 +26,7 @@ git status --porcelain
 
 - URL 含 `github.com`：停下，说明本 Skill 只适用于 GitLab。
 - URL 含 `gitlab`：继续。
-- 其它：`glab repo view` 成功则继续，否则停下。
+- 其它：`sw glab repo view` 成功则继续，否则停下。
 - `git status --porcelain` 非空：停下，先让用户处理未提交改动。
 
 ## 1. master / test 映射
@@ -65,7 +66,7 @@ slug: weapp-yz
 已有 Issue：
 
 ```bash
-glab issue view <iid> --output json
+sw glab issue view <iid> --output json
 ```
 
 记下 `iid` 和标题，不要再 `issue create`。
@@ -73,20 +74,20 @@ glab issue view <iid> --output json
 新建：
 
 ```bash
-glab issue create --title "<标题>" --description "" --no-editor --yes
+sw glab issue create --title "<标题>" --description "" --no-editor --yes
 ```
 
-从输出或 `glab issue list --search "<标题>"` 拿到 `iid`。不要打开编辑器。
+从输出或 `sw glab issue list --search "<标题>"` 拿到 `iid`。不要打开编辑器。
 
 远端只建分支（`ref` 是第 1 节的源分支，名字 `{iid}-{标题}`，标题已是短横线形式则不要再 slug 一遍）：
 
 ```bash
-glab api -X POST "projects/:id/repository/branches" \
+sw glab api -X POST "projects/:id/repository/branches" \
   -f "branch=<iid>-<标题>" \
   -f "ref=<源分支>"
 ```
 
-分支已存在则不要报成失败，继续 checkout。不要用 `glab mr for`。
+分支已存在则不要报成失败，继续 checkout。不要用 `sw glab mr for`。
 
 ## 4. 本机 checkout
 

@@ -19,6 +19,7 @@ Agent 只做两件事：看要不要推送，然后在用户看得见的 IDE 终
   不 `git add`，不 `git pull`。冲突了或用户说冲突了，转交 `spec-git-conflict`，然后结束。
 - 不在对话里执行 `sw merge`，不等待命令结束，不读取终端输出，不轮询 GitLab，
   不按退出码汇报流水线。宿主后来叫醒你，也不要去读日志或总结结果。
+- 调 GitLab API 一律 `sw glab ...`，不要直接 `glab`。不要 `glab auth login`，不要读、不要 `source` `~/.specweaver/.env`。
 - 不泄露 Token、Cookie、`.env` 内容或完整的认证响应。
 
 ## 0. 是不是 GitLab
@@ -29,7 +30,7 @@ git remote get-url origin
 
 - URL 含 `github.com`：停下，说明本 Skill 只适用于 GitLab。
 - URL 含 `gitlab`：继续。
-- 其它：跑 `glab repo view`；成功则当 GitLab，失败则停下，不要改走 `gh`。
+- 其它：跑 `sw glab repo view`；成功则当 GitLab，失败则停下，不要改走 `gh`。
 
 ## 1. 目标分支
 
