@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitLab 合并"
+  short_description: "仅 GitLab：在 IDE 终端启动 sw merge；未推送则先 push"
+  default_prompt: "Use $spec-git-merge to start merge in the user's IDE terminal and stop."

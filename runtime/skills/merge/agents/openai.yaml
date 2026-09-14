@@ -1,4 +1,0 @@
-interface:
-  display_name: "分支合并"
-  short_description: "在 IDE 终端启动 sw merge；未推送则先 push"
-  default_prompt: "Use $spec-merge to start merge in the user's IDE terminal and stop."

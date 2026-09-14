@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitLab 拉分支"
+  short_description: "仅 GitLab：建 Issue，从该线 master 拉开发分支再 checkout"
+  default_prompt: "Use $spec-git-branch to create a GitLab issue, create the remote branch from master, then fetch and checkout."

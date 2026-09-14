@@ -1,0 +1,96 @@
+---
+name: spec-git-branch
+description: 仅 GitLab。从 Issue 拉开发分支：先建 Issue（或用已有 Issue），远端从该线的 master 只建分支不建 MR，再本机 fetch 后 checkout。用户说“开分支”“拉分支”“建 issue 拉分支”“从 issue 拉个分支”“新建开发分支”时使用。标题必须带 -yf；有 .specweaver.yml 时还要带对应 slug。不提交、不 push、不合并。GitHub 仓不要用；合并走 spec-git-merge，冲突走 spec-git-conflict。
+---
+
+# 从 Issue 拉分支（GitLab）
+
+对齐网页：先建 Issue，再 Create branch（不是 Create merge request and branch）。
+
+## 边界
+
+- **只适用于 GitLab。** GitHub 或看不出是 GitLab 时停下，不要改走 `gh`。
+- 只建 Issue 和远端分支，然后本机 fetch / checkout。不提交、不 push、不合、不建 MR。
+- 不要用 `glab mr for` / `glab mr create --related-issue`（那是分支+MR）。
+- 源分支是该线的 master（有配置且命中 flavor 用它的 `master`，否则 `master`），
+  不要从当前 HEAD 拉。用户明确指定源时用用户的。
+- 工作区不干净则停下，不 stash、不把别人的改动捎进新分支。
+- 不泄露 Token、Cookie、`.env` 或完整认证响应。缺 `glab` 时停下，让用户看命令提示。
+
+## 0. 是不是 GitLab
+
+```bash
+git remote get-url origin
+git status --porcelain
+```
+
+- URL 含 `github.com`：停下，说明本 Skill 只适用于 GitLab。
+- URL 含 `gitlab`：继续。
+- 其它：`glab repo view` 成功则继续，否则停下。
+- `git status --porcelain` 非空：停下，先让用户处理未提交改动。
+
+## 1. 当前线（flavor）
+
+```bash
+git rev-parse --show-toplevel
+```
+
+读仓库根 `.specweaver.yml`。没有该文件：源分支 `master`，标题不加 slug。
+
+有文件时按顺序**唯一**命中一条，命中后源分支用它的 `master`，标题要带它的 `slug`：
+
+1. 用户原话整串等于某个 `type` 或 `aliases`（如 `weapp`、`驿站微信`）。
+2. 用户已给的标题或当前分支名里出现 `-{slug}-`，**最长 slug 先中**。
+3. 对不上或对上多条：列出 `type` / `aliases` / `slug` 问用户，不准默认 `weapp`。
+
+不要读 `taro-ci.config.js`，不要自己 `split('_')` 推 type。
+
+## 2. Issue 标题
+
+新建 Issue 时标题由三截拼成：`{topic}-{slug}-yf`（无 slug 则 `{topic}-yf`）。
+`{iid}-` 由 GitLab 建分支时自动加，不要写进标题。
+
+1. 用户给 topic（或整段标题）。已有 Issue 编号/链接则跳过本节，用 Issue 现成标题，不改名。
+2. 去掉末尾已有的 `-yf`（避免重复）。
+3. 当前 flavor 有 `slug`，且标题里还没有这段连续 slug：在末尾加上 `-{slug}`。
+4. 加上 `-yf`。这是开发者标记，不能省。
+5. 描述、标签、指派人不问、不填，除非用户写了。
+
+## 3. 建 Issue 和远端分支
+
+已有 Issue：
+
+```bash
+glab issue view <iid> --output json
+```
+
+记下 `iid` 和标题，不要再 `issue create`。
+
+新建：
+
+```bash
+glab issue create --title "<标题>" --description "" --no-editor --yes
+```
+
+从输出或 `glab issue list --search "<标题>"` 拿到 `iid`。不要打开编辑器。
+
+远端只建分支（`ref` 是第 1 节的源分支，名字 `{iid}-{标题}`，标题已是短横线形式则不要再 slug 一遍）：
+
+```bash
+glab api -X POST "projects/:id/repository/branches" \
+  -f "branch=<iid>-<标题>" \
+  -f "ref=<源分支>"
+```
+
+分支已存在则不要报成失败，继续 checkout。不要用 `glab mr for`。
+
+## 4. 本机 checkout
+
+```bash
+git fetch origin <分支名>
+git checkout <分支名>
+```
+
+本地已有同名分支：checkout 后 `git merge --ff-only origin/<分支名>`。不能 fast-forward 则停下问，不要 `--hard` 清掉。
+
+跟用户报告：Issue 编号、分支名、源分支。不要接着提交或合并。

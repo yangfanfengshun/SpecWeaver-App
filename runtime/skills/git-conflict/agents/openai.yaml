@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitLab 解冲突"
+  short_description: "仅 GitLab：合进 test 线撞冲突时本机 merge --no-ff，问谁改再 push"
+  default_prompt: "Use $spec-git-conflict to resolve merge conflicts into the GitLab test line locally, then push."
