@@ -83,20 +83,25 @@ Tower: <Tower 链接或“无”>
 仅在用户明确要求同步/评论到 Tower 时执行。已经提交、只要求同步时跳过第 1–4 节，使用当前分支与 HEAD。
 
 1. 必须有唯一关联 Tower 链接；不能唯一确认时询问，不能凭任务名称猜链接。
-2. 项目名取当前仓库根目录名（`git rev-parse --show-toplevel` 的最后一段），
-   不要用 Tower 项目名。
-3. 生成评论并直接发布，`requirement_add_comment(url, content, dry_run=false)`。
+2. 在当前仓库执行本 Skill 旁的脚本，标准输出就是评论正文，原样交给
+   `requirement_add_comment(url, content, dry_run=false)`，不要改写、不要手拼：
+
+```bash
+python3 <本Skill目录>/scripts/tower_commit_comment.py
+```
+
    不要 `dry_run=true`，不要先读任务、不要下图、不要为去重通读评论，
    不要发完再采集核对。同一提交被明确要求两次，允许出现两条评论。
 
-```text
-项目：<project>
-开发分支：<branch>
-提交 HEAD：<full-head>
-SpecWeaver-Commit: <project>/<branch>@<full-head>
-```
+脚本约定：
 
-4. 只有返回 `status` 为 `success` 才说明评论真的发出去了。认证失效时提示用户
+- 项目名取仓库根目录名，不要用 Tower 项目名。
+- 能从 `origin` 收成网页地址时，项目链到仓库首页，开发分支链到该分支页面。
+- 提交时间用生成评论时的本机当前时间，格式 `YYYY-MM-DD HH:mm:ss`。
+- 没有 `origin` 或认不出地址时退回纯文本；`SpecWeaver-Commit` 行始终保持纯文本。
+- 不要把 remote 里的账号、口令或 Token 写进评论。
+
+3. 只有返回 `status` 为 `success` 才说明评论真的发出去了。认证失效时提示用户
    打开 SpecWeaver 设置页重新配置 Tower，保留已完成的 Git 提交，认证恢复后只重试本节。
 
 ## 6. 完成后的提示
