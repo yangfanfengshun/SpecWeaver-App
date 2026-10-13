@@ -7,7 +7,7 @@ description: 从设计稿读取项目与设计候选，并在范围确认后保�
 
 ## 输入与边界
 
-- 接收设计稿项目/设计链接（Figma 或蓝湖）、采用范围，以及可选的绝对项目输出路径。
+- 接收设计稿项目/设计链接（Figma、蓝湖或月维）、采用范围，以及可选的绝对项目输出路径。
 - 只负责设计候选与设计证据；不决定需求模式，不生成最终 Markdown。
 - 向总控返回结果时遵守
   [来源结果协议](~/.specweaver/skills/requirement-collection/references/source-result-contract.md)。
@@ -22,8 +22,7 @@ description: 从设计稿读取项目与设计候选，并在范围确认后保�
 5. 单屏链接，或额外传 `image_id` 时，`design_read` 返回统一 schema（可带
    `preview_url`）。独立核对此处停止，不要把 JSON 写进用户项目 `design/`。
 
-认证失效时返回 `auth_expired`，提示用户打开 SpecWeaver 设置页重新配置 Figma Token
-或蓝湖；区分 `forbidden`、`network_error` 和 `not_found`，不得自动改成无设计稿。
+认证失效时返回 `auth_expired`，提示用户打开 SpecWeaver 设置页重新配置对应平台（Figma Token、蓝湖或月维 JWT）；区分 `forbidden`、`network_error` 和 `not_found`，不得自动改成无设计稿。
 
 ## 完整收集已确认设计
 

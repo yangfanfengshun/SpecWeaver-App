@@ -1,7 +1,7 @@
 # SpecWeaver
 
 macOS 桌面控制台。在 Claude Code、Codex、Cursor 三个宿主之间开关 SpecWeaver 的
-MCP 与 Skills，并集中配置 Tower、蓝湖、Eolink 的认证，不用再手工去改各宿主的配置文件。
+MCP 与 Skills，并集中配置 Tower、蓝湖、Figma、月维、Eolink 的认证，不用再手工去改各宿主的配置文件。
 
 > 面向公司内部同事。MCP 和 Skills 都是按公司产品定制的，外部拿到也用不了。
 
@@ -12,7 +12,7 @@ SpecWeaver 把散落在需求任务、设计稿和 API 文档里的事实收集�
 
 - **需求**：读取 Tower 正文、独立评论、子任务和图片；Bug 可直接快速分析，普通需求可
   完整收集资料并生成 `requirement.md`。
-- **设计稿**：读取蓝湖候选、预览图、图层结构和真实切图，既能参与完整需求收集，也能
+- **设计稿**：读取蓝湖、Figma、月维的候选、预览图、图层结构和真实切图，既能参与完整需求收集，也能
   单独核对或在开发时还原界面。
 - **API 文档**：读取 Eolink 接口、请求参数、响应字段、枚举和示例，既能参与完整需求
   收集，也能单独核对接口契约。
@@ -141,8 +141,9 @@ xattr -dr com.apple.quarantine /Applications/SpecWeaver.app
   不拷贝、不改你的文件。宿主里用目录原名，不加 `spec-` 前缀。删除前需要先关掉所有平台。
 
 **设置页**配置数据源认证。Tower、蓝湖、Eolink 都支持账号密码登录，也可以直接粘 Cookie，
-GitLab 填地址和 Personal Access Token，填完都能当场验证是否有效。
-只用其中一两个宿主的话，「平台配置」里可以把其余的开关隐藏掉。
+Figma 和月维填 Token，GitLab 填地址和 Personal Access Token，填完都能当场验证是否有效。
+只用其中一两个宿主的话，「平台配置」里可以把其余的开关隐藏掉。升级之后，开关旁边的
+「一键更新」会把这个宿主上已经打开的 Skill 换成当前安装包里的版本。
 
 改完开关需要**新开一个宿主会话**才会生效。
 

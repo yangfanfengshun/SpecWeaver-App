@@ -1,6 +1,6 @@
 # design 多平台对接
 
-蓝湖 + Figma 是 design 能力「同一能力、多家平台」的落地。
+蓝湖 + Figma + 月维是 design 能力「同一能力、多家平台」的落地。
 下一刀（MasterGo 或别的设计平台）按本文做，不要再发明第二套隔离。
 
 平台方言、实测踩坑、官方接口表写进 `reference-docs/<平台>.md`（Figma 见
@@ -89,7 +89,7 @@ runtime/mcp/design/providers/<name>/
 
 1. **给了 URL**：必须有人 `claims_url` 认领。没人认领 → `no_provider`。
    不能因为「现在只有一家」就兜底误路由。
-2. **没给 URL**：现在同时有蓝湖和 Figma，不带链接的 `design_check_auth()` 会
+2. **没给 URL**：现在同时有蓝湖、Figma 和月维，不带链接的 `design_check_auth()` 会
    `no_provider`（只有一家时才允许单家回退）。不要为了省事改成「默认蓝湖」。
 3. **设置页验证不走 `design_check_auth`**，走 `auth_cli.py <platform>-verify`。
 

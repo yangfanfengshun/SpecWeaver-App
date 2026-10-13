@@ -1,6 +1,6 @@
 ---
 name: spec-git-branch
-description: 仅 GitLab。从 Issue 拉开发分支：先建 Issue（或用已有 Issue），远端从该线的 master 只建分支不建 MR，再本机 fetch 后 checkout。用户说“开分支”“拉分支”“建 issue 拉分支”“从 issue 拉个分支”“新建开发分支”时使用。标题必须带 -yf；有 .specweaver.yml 时还要带对应 slug。不提交、不 push、不合并。GitHub 仓不要用；合并走 spec-git-merge，冲突走 spec-git-conflict。
+description: 仅 GitLab。从 Issue 拉开发分支：先建 Issue（或用已有 Issue），远端从该线的 master 只建分支不建 MR，再本机 fetch 后 checkout。用户说“开分支”“拉分支”“切个新分支”“建 issue 拉分支”“从 issue 拉个分支”“新建开发分支”时使用。topic 禁止中文，自起名用 xxx-xxx 双词；没有需求时先问分支名。标题必须带 -yf；有 .specweaver.yml 时还要带对应 slug。不提交、不 push、不合并。GitHub 仓不要用；合并走 spec-git-merge，冲突走 spec-git-conflict。
 ---
 
 # 从 Issue 拉分支（GitLab）
@@ -14,6 +14,7 @@ description: 仅 GitLab。从 Issue 拉开发分支：先建 Issue（或用已�
 - 不要用 `sw glab mr for` / `sw glab mr create --related-issue`（那是分支+MR）。
 - 源分支默认 `master`。仓库根有 `.specweaver.yml` 且写了 `master`，就用文件里的名字替换，不要从当前 HEAD 拉。用户明确指定源时用用户的。
 - 工作区不干净则停下，不 stash、不把别人的改动捎进新分支。
+- Issue 标题和分支名**禁止中文**。topic 只允许小写字母、数字和 `-`；自起名必须是 `xxx-xxx` 双词组合。
 - 调 GitLab API 一律 `sw glab ...`，不要直接 `glab`。不要 `glab auth login`，不要读、不要 `source` `~/.specweaver/.env`。
 - 不泄露 Token、Cookie、`.env` 或完整认证响应。缺 `sw` 时说明它随 SpecWeaver App 分发；缺 `glab` 或提示 GitLab 尚未配置时，让用户看命令提示去 App 设置页。
 
@@ -55,11 +56,30 @@ slug: weapp-yz
 新建 Issue 时标题由三截拼成：`{topic}-{slug}-yf`（无 slug 则 `{topic}-yf`）。
 `{iid}-` 由 GitLab 建分支时自动加，不要写进标题。
 
-1. 用户给 topic（或整段标题）。已有 Issue 编号/链接则跳过本节，用 Issue 现成标题，不改名。
-2. 去掉末尾已有的 `-yf`（避免重复）。
-3. 文件里写了 `slug`，且标题里还没有这段连续 slug：在末尾加上 `-{slug}`。
-4. 加上 `-yf`。这是开发者标记，不能省。
-5. 描述、标签、指派人不问、不填，除非用户写了。
+**禁止中文。** topic、Issue 标题、分支名只允许小写字母、数字和 `-`。
+自起名时 topic 必须是 `xxx-xxx`：两个小写英文单词，中间一个短横线。
+
+### 怎么拿到 topic
+
+按下面顺序，命中一条就停：
+
+1. 用户给出了分支名或 topic：
+   - 全是英文（字母、数字和 `-`）：用用户的。
+   - 含中文或其他非法字符：停下问一个英文 `xxx-xxx`，不要把中文音译或直译后继续。
+2. 用户没给名字，但当前对话已经有明确改动需求（任务、正在做的功能）：
+   自己起一个 `xxx-xxx`，让人看出改的是哪块。不要把需求中文标题或任务名写进分支。
+3. 用户只说「开分支」「切个新分支」「拉个分支」，对话里对不上改动需求：
+   **先问分支名**，得到再往下走。不要自作主张起名，不要先建 Issue。
+
+已有 Issue 编号/链接：不要改 Issue 标题。标题已是英文短横线则用它当 topic；
+标题含中文时不要拼进分支名，改走上面 1–3 条另取 topic。
+
+拿到 topic 之后：
+
+1. 去掉末尾已有的 `-yf`（避免重复）。
+2. 文件里写了 `slug`，且标题里还没有这段连续 slug：在末尾加上 `-{slug}`。
+3. 加上 `-yf`。这是开发者标记，不能省。
+4. 描述、标签、指派人不问、不填，除非用户写了。
 
 ## 3. 建 Issue 和远端分支
 
@@ -79,7 +99,7 @@ sw glab issue create --title "<标题>" --description "" --no-editor --yes
 
 从输出或 `sw glab issue list --search "<标题>"` 拿到 `iid`。不要打开编辑器。
 
-远端只建分支（`ref` 是第 1 节的源分支，名字 `{iid}-{标题}`，标题已是短横线形式则不要再 slug 一遍）：
+远端只建分支（`ref` 是第 1 节的源分支，名字 `{iid}-{标题}`，标题必须是第 2 节得到的英文短横线形式，不要再 slug 一遍，也不要把中文 Issue 标题拼进来）：
 
 ```bash
 sw glab api -X POST "projects/:id/repository/branches" \

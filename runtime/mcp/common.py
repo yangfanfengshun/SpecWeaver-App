@@ -25,6 +25,7 @@ CONFIG_KEYS = (
     "GITLAB_TOKEN",
     "APIFOX_TOKEN",
     "FIGMA_TOKEN",
+    "MOONVY_TOKEN",
 )
 SPECWEAVER_HOME = Path(
     os.getenv("SPECWEAVER_HOME", Path.home() / ".specweaver")
@@ -155,6 +156,7 @@ PLATFORM_LABELS = {
     "gitlab": "GitLab",
     "apifox": "Apifox",
     "figma": "Figma",
+    "moonvy": "月维",
 }
 
 
