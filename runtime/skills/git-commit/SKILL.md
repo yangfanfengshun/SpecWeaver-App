@@ -1,6 +1,6 @@
 ---
 name: spec-git-commit
-description: 审查当前 Git 改动、选择明确范围并生成 Conventional Commits 格式的提交；提交正文记录 Tower 链接、改动内容和验证结果。仅在用户明确要求把分支与提交同步到 Tower 时发布评论。用户要求提交、生成 commit message、按 Tower 需求提交或把分支与提交同步到 Tower 时使用。不创建 PR、不合并分支、不推送、不发布版本。
+description: 审查当前 Git 改动、选择明确范围并生成 Conventional Commits 格式的提交；提交正文记录 Tower 链接、改动内容和验证结果。仅在用户明确要求把分支与提交同步到 Tower 时发布评论。用户要求提交、生成 commit message、按 Tower 需求提交或把分支与提交同步到 Tower 时使用。用户说「四件套」时不要用本 Skill 收尾，改走 spec-four-piece。不创建 PR、不合并分支、不推送、不发布版本。
 ---
 
 # 受控 Git 提交
@@ -105,6 +105,8 @@ python3 <本Skill目录>/scripts/tower_commit_comment.py
    打开 SpecWeaver 设置页重新配置 Tower，保留已完成的 Git 提交，认证恢复后只重试本节。
 
 ## 6. 完成后的提示
+
+用户这次说的是「四件套」时，本节整节跳过，回到 `spec-four-piece` 继续评论、日报和合并。
 
 提交报告之后，**按下列条件输出提示文案**。这一节产出的是要对用户说的话，
 不是接下来要执行的步骤——列出来的事情一律等用户开口再做，不得顺着往下干。

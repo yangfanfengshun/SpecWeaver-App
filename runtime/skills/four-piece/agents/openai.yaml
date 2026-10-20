@@ -1,0 +1,4 @@
+interface:
+  display_name: "四件套"
+  short_description: "提交、评论 Tower、记日报，再合并到 test"
+  default_prompt: "Use $spec-four-piece to commit, comment on Tower, record the daily log, then start the merge."

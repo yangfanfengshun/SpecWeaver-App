@@ -75,35 +75,39 @@ def trimmed_end(lines: list[str], start: int, end: int) -> int:
     return end
 
 
-def requirement_lines(requirement: str, completed: list[str]) -> list[str]:
+def requirement_lines(requirement: str, points: list[str]) -> list[str]:
     return [
         f"### 需求：{requirement}",
         "",
-        *[f"{ITEM_PREFIX}{item}" for item in completed],
+        *[f"{ITEM_PREFIX}{point}" for point in points],
     ]
 
 
-def project_lines(project: str, requirement: str, completed: list[str]) -> list[str]:
-    return [f"## 项目：{project}", "", *requirement_lines(requirement, completed)]
+def project_lines(project: str, requirement: str, points: list[str]) -> list[str]:
+    return [f"## 项目：{project}", "", *requirement_lines(requirement, points)]
 
 
 def merge_daily_log(
-    content: str, target_date: str, project: str, requirement: str, completed: list[str]
+    content: str,
+    target_date: str,
+    project: str,
+    requirement: str,
+    points: list[str],
 ) -> tuple[str, int]:
     lines = content.splitlines() or [f"# {target_date} 日报记录"]
     project_section = find_project(lines, project)
     if project_section is None:
         if lines and lines[-1] != "":
             lines.append("")
-        lines.extend(project_lines(project, requirement, completed))
-        return "\n".join(lines).rstrip() + "\n", len(completed)
+        lines.extend(project_lines(project, requirement, points))
+        return "\n".join(lines).rstrip() + "\n", len(points)
 
     start, end = project_section
     requirement_section = find_requirement(lines, start + 1, end, requirement)
     if requirement_section is None:
         insert = trimmed_end(lines, start + 1, end)
-        lines[insert:insert] = ["", *requirement_lines(requirement, completed)]
-        return "\n".join(lines).rstrip() + "\n", len(completed)
+        lines[insert:insert] = ["", *requirement_lines(requirement, points)]
+        return "\n".join(lines).rstrip() + "\n", len(points)
 
     requirement_start, requirement_end = requirement_section
     existing = {
@@ -111,10 +115,10 @@ def merge_daily_log(
         for line in lines[requirement_start + 1 : requirement_end]
         if line.startswith(ITEM_PREFIX)
     }
-    additions = [item for item in completed if item not in existing]
+    additions = [point for point in points if point not in existing]
     if additions:
         insert = trimmed_end(lines, requirement_start + 1, requirement_end)
-        lines[insert:insert] = [f"{ITEM_PREFIX}{item}" for item in additions]
+        lines[insert:insert] = [f"{ITEM_PREFIX}{point}" for point in additions]
     return "\n".join(lines).rstrip() + "\n", len(additions)
 
 
@@ -141,14 +145,27 @@ def render_plain_text(content: str) -> str:
     blocks = []
     for project, requirements in parse_daily_log(content):
         lines = [f"项目：{project}"]
-        for order, (requirement, completed) in enumerate(requirements, start=1):
+        for order, (requirement, points) in enumerate(requirements, start=1):
             lines.append(f"{order}.{requirement}")
             lines.extend(
-                f"{order}.{item_order} {item}"
-                for item_order, item in enumerate(completed, start=1)
+                f"{order}.{point_order} {point}"
+                for point_order, point in enumerate(points, start=1)
             )
         blocks.append("\n".join(lines))
     return "\n\n".join(blocks)
+
+
+def rendered_path(path: Path) -> Path:
+    return path.with_suffix(".txt")
+
+
+def write_rendered(path: Path, markdown: str) -> Path | None:
+    rendered = render_plain_text(markdown)
+    if not rendered:
+        return None
+    target = rendered_path(path)
+    write_atomic(target, rendered + "\n")
+    return target
 
 
 def write_atomic(path: Path, content: str) -> None:
@@ -168,7 +185,11 @@ def write_atomic(path: Path, content: str) -> None:
 
 
 def add_entry(
-    path: Path, target_date: str, project: str, requirement: str, completed: list[str]
+    path: Path,
+    target_date: str,
+    project: str,
+    requirement: str,
+    points: list[str],
 ) -> int:
     path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     path.parent.chmod(0o700)
@@ -178,11 +199,15 @@ def add_entry(
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
         current = path.read_text(encoding="utf-8") if path.exists() else ""
         merged, added = merge_daily_log(
-            current, target_date, project, requirement, completed
+            current, target_date, project, requirement, points
         )
         if added or not path.exists():
             write_atomic(path, merged)
-    print(f"日报已更新：{path.resolve()}（新增 {added} 项）")
+        text_path = write_rendered(path, merged) if path.exists() else None
+    message = f"日报已更新：{path.resolve()}（新增 {added} 项）"
+    if text_path is not None:
+        message += f"，成品：{text_path.resolve()}"
+    print(message)
     return 0
 
 
@@ -190,13 +215,20 @@ def show_daily_log(path: Path, target_date: str) -> int:
     if not path.is_file():
         print(f"当天没有日报记录：{target_date}（文件：{path.resolve()}）", file=sys.stderr)
         return 1
-    rendered = render_plain_text(path.read_text(encoding="utf-8"))
-    if not rendered:
-        print(f"当天的日报没有可汇总的内容：{path.resolve()}", file=sys.stderr)
-        return 1
+    path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    lock_path = path.with_suffix(path.suffix + ".lock")
+    with lock_path.open("a", encoding="utf-8") as lock:
+        lock_path.chmod(0o600)
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        markdown = path.read_text(encoding="utf-8")
+        rendered = render_plain_text(markdown)
+        if not rendered:
+            print(f"当天的日报没有可汇总的内容：{path.resolve()}", file=sys.stderr)
+            return 1
+        text_path = write_rendered(path, markdown)
     # stdout 只放可直接发送的成品，路径这类提示一律走 stderr
     print(rendered)
-    print(f"文件：{path.resolve()}", file=sys.stderr)
+    print(f"成品：{text_path.resolve()}", file=sys.stderr)
     return 0
 
 
@@ -205,11 +237,11 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("--directory", type=Path, default=default_log_directory())
     subparsers = parser.add_subparsers(dest="command", required=True)
 
-    add = subparsers.add_parser("add", help="追加本次任务的完成事项")
+    add = subparsers.add_parser("add", help="追加本次需求下的概念条目")
     add.add_argument("--date")
     add.add_argument("--project", required=True)
-    add.add_argument("--requirement", required=True, help="本次完成事项所属的需求")
-    add.add_argument("--completed", action="append", required=True)
+    add.add_argument("--requirement", required=True, help="任务全称，不缩写")
+    add.add_argument("--point", action="append", required=True, help="概念条目，不写实现")
 
     show = subparsers.add_parser("show", help="读取指定日期的全部项目记录")
     show.add_argument("--date")
@@ -224,10 +256,10 @@ def main() -> int:
         if arguments.command == "add":
             project = normalize(arguments.project, "项目名称")
             requirement = normalize(arguments.requirement, "需求名称")
-            completed = list(
-                dict.fromkeys(normalize(item, "完成事项") for item in arguments.completed)
+            points = list(
+                dict.fromkeys(normalize(item, "技术点") for item in arguments.point)
             )
-            return add_entry(path, target_date, project, requirement, completed)
+            return add_entry(path, target_date, project, requirement, points)
         return show_daily_log(path, target_date)
     except (OSError, ValueError) as error:
         print(f"ERROR: {error}", file=sys.stderr)

@@ -1,6 +1,6 @@
 ---
 name: spec-git-merge
-description: 仅 GitLab。在用户可见的 IDE 终端里启动合并：本地未推送则先 push 再 sw merge，已推送则只跑 sw merge。用户说“合并到 test”“帮我合并”“推送并合并”“合到 develop”“提交完帮我合一下”时使用。禁止合并到 master / main 系列主干。启动终端后不要等待、不要读输出、不要追踪流水线。冲突了或用户说冲突了，转交 spec-git-conflict，本 Skill 不解冲突。GitHub 仓不要用；开分支走 spec-git-branch，提交走 spec-git-commit。
+description: 仅 GitLab。在用户可见的 IDE 终端里启动合并：本地未推送则先 push 再 sw merge，已推送则只跑 sw merge。用户说“合并到 test”“帮我合并”“推送并合并”“合到 develop”“提交完帮我合一下”时使用。用户说「四件套」时不要直接从本 Skill 开始，由 spec-four-piece 在提交、评论和日报之后转入。禁止合并到 master / main 系列主干。启动终端后不要等待、不要读输出、不要追踪流水线。冲突了或用户说冲突了，转交 spec-git-conflict，本 Skill 不解冲突。GitHub 仓不要用；开分支走 spec-git-branch，提交走 spec-git-commit。
 ---
 
 # 合并分支（GitLab）
@@ -11,6 +11,7 @@ Agent 只做两件事：看要不要推送，然后在用户看得见的 IDE 终
 ## 边界
 
 - **只适用于 GitLab。** 先检查远端，GitHub 或看不出是 GitLab 时停下说明，不要改走 `gh` / PR。
+- 用户说「四件套」时不要从这里开始。由 `spec-four-piece` 转入后仍按本 Skill 执行，启动终端后结束。
 - 目标分支默认 `test`。仓库根 `.specweaver.yml` 写了 `test`，就用那个名字替换（用户说「合到 test」也是换成映射后的名字，不是字面分支 `test`）。用户给出完整分支名时用用户的。
 - **master / main 系列一律拒绝**（含 `master-xxx`、`master_xxx`、`main` 等变体，
   包括 `master_yz`）：合进主干等于上线，必须到 GitLab 网页端人工创建 MR 走审核。
