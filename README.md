@@ -8,7 +8,7 @@ MCP 与 Skills，并集中配置 Tower、蓝湖、Figma、月维、Eolink 的认
 ## 能做什么
 
 SpecWeaver 把散落在需求任务、设计稿和 API 文档里的事实收集到项目，再交给 Agent
-分析或开发。它提供三类来源能力和八项独立工作能力：
+分析或开发。它提供三类来源能力和九项独立工作能力：
 
 - **需求**：读取 Tower 正文、独立评论、子任务和图片；Bug 可直接快速分析，普通需求可
   完整收集资料并生成 `requirement.md`。
@@ -19,8 +19,10 @@ SpecWeaver 把散落在需求任务、设计稿和 API 文档里的事实收集�
 - **Git 提交**：审查明确范围、运行必要验证并生成受控提交；有关联 Tower 时，评论始终
   先预览，确认后才发布。
 - **GitLab 拉分支**：建 Issue，从该线 master 只建远端分支再本机 checkout。只适用于 GitLab。
-- **GitLab 合并**：在确认后推送当前分支，通过 `sw merge` 合并到测试分支并追踪对应流水线；
-  主干合并始终留给人工审核。只适用于 GitLab。
+- **GitLab 合并**：在确认后推送当前分支，通过 `sw merge` 合并到测试分支并追踪对应流水线。
+  只适用于 GitLab。`sw merge` 不会合并主干。
+- **GitLab 上线与灰度**：通过 `sw release` 对主干只开 MR 并指定审核人，不合并。
+  上线标题带「 -- 上线」，灰度带「 -- 灰度」。只适用于 GitLab。
 - **GitLab 解冲突**：合进 test 线撞冲突时在本机 `merge --no-ff`，问清谁改再 push。只适用于 GitLab。
 - **日报**：只在明确要求时记录已经完成的代码工作，并按天汇总多个项目。
 - **知识库初始化**：在业务仓库根建立 `.knowledge`。Umi/Antd 与 Taro 对着入口表填卡，
@@ -55,7 +57,7 @@ flowchart LR
 - macOS 12 (Monterey) 及以上，Intel 和 Apple Silicon 都支持
 - [uv](https://docs.astral.sh/uv/)：MCP 是 Python 实现的，靠它启动。
   用 Homebrew 装本应用会**自动带上**，其他方式需要自己管（`brew install uv`）
-- `glab` 和 `jq`：只有命令行的 `sw merge` 用得到，同样由 Homebrew 自动带上
+- `glab` 和 `jq`：命令行的 `sw merge` 和 `sw release` 用得到，同样由 Homebrew 自动带上
   （`brew install glab jq`）。不用这个命令的话可以不管
 
 缺了 uv，App 里的开关照样能开、配置也会正确写进宿主，但宿主真正去拉起 MCP 时会失败。
@@ -160,14 +162,26 @@ sw merge feature/login      # 指定源分支
 sw merge --target develop   # 换目标分支
 ```
 
-**合并到 master / main 会被直接拒绝**，包括 `master-xxx`、`master_xxx` 这些变体。
-合进主干属于上线，仍然要去 GitLab 网页端人工创建 MR 走审核。
+**`sw merge` 合并到 master / main 会被直接拒绝**，包括 `master-xxx`、`master_xxx` 这些变体。
+上线和灰度走下面的 `sw release`，只开 MR。
 
 中途按 Ctrl-C 或遇到冲突都不要紧：它不存本地状态，重新执行会读 GitLab 上的真实情况
 接着走——已经建过的 MR 不会重复建，已经合并的不会重复合。
 
 冲突需要你自己解决，解决完再跑一次即可。流水线失败、被取消或超时都会以非 0 退出，
 方便挂到别的脚本里。
+
+### 命令行：sw release
+
+对主干只创建 MR，不合并，也不看流水线。`online` 是上线，`gray` 是灰度。
+
+```bash
+sw release online                  # 当前分支 -> master，标题接「 -- 上线」
+sw release gray                    # 当前分支 -> master，标题接「 -- 灰度」
+sw release online feature/login --target master_yz
+```
+
+没写 `--title` 时，标题用相对目标分支最早的一条提交。没写 `--assignee` 时用已配置的默认指派人，没有就指派自己。写了中文姓名时，会先按姓名查 GitLab 用户名，查到唯一一个才指派。已经打开的同源同目标 MR 不会再建。
 
 ## 实现
 

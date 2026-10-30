@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitLab 上线与灰度"
+  short_description: "仅 GitLab：对主干只开上线或灰度 MR，不合并"
+  default_prompt: "Use $spec-git-release to open a GitLab MR to the master line and stop without merging."

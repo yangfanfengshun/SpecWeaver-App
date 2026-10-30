@@ -23,6 +23,9 @@ CONFIG_KEYS = (
     # GITLAB_HOST 存主机名（不带协议），这是 glab 期望的形式。
     "GITLAB_HOST",
     "GITLAB_TOKEN",
+    # 上线/灰度 MR 的默认指派人，值是 GitLab username。不进 App 设置页。
+    # 续 Cookie 会按这份名单整文件重写，漏了这里，手工写上的键会被擦掉。
+    "GITLAB_ASSIGNEE",
     "APIFOX_TOKEN",
     "FIGMA_TOKEN",
     "MOONVY_TOKEN",
