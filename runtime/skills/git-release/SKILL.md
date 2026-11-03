@@ -5,8 +5,8 @@ description: 仅 GitLab。用户说「上线」「灰度」「上灰度」「发
 
 # 上线与灰度（GitLab）
 
-Agent 只做这些事：确认是 GitLab、解析目标分支、看要不要推送，然后在用户看得见的 IDE 终端里启动**一条**命令。
-之后本 Skill 结束。MR 地址在那个终端里，用户自己看。不合并，不看流水线。
+Agent 只做这些事：确认是 GitLab、解析目标分支、看要不要推送，然后在对话里执行**一条**命令。
+命令一返回就把 `MR !编号  链接` 告诉用户。之后本 Skill 结束。不合并，不看流水线。
 
 ## 边界
 
@@ -17,8 +17,9 @@ Agent 只做这些事：确认是 GitLab、解析目标分支、看要不要推�
 - 不调用 `sw merge`，不执行合并，不在本机 `git merge` 后推主干。冲突留在 MR 上，不转 `spec-git-conflict`（那条只解 test 线）。
 - 不修改代码，不解决冲突，不变基，不 `git commit --amend`，不 `--force` 推送，
   不 `git add`，不 `git pull`。
-- 不在对话里执行 `sw release`，不等待命令结束，不读取终端输出，不轮询 GitLab，
-  不按退出码汇报。宿主后来叫醒你，也不要去读日志或总结结果。
+- 直接在对话里执行 `sw release`，等它返回，把结果里的 MR 链接交给用户。
+  这条命令只发一次建 MR 的请求就结束，耗时和普通命令一样，不存在要盯着看的长时间输出。
+- 不轮询 GitLab，不查流水线，不按退出码决定是否继续追问。MR 建好就停。
 - 调 GitLab 一律走 `sw release`。不要 `glab auth login`，不要读、不要 `source` `~/.specweaver/.env`。
   指派人由命令自己决定，Skill 不读 `GITLAB_ASSIGNEE`。
 - 不泄露 Token、Cookie、`.env` 内容或完整的认证响应。
@@ -43,7 +44,7 @@ git rev-parse --abbrev-ref HEAD
 读仓库根 `.specweaver.yml`。没有文件、文件是空的、或没写 `master`：目标用 `master`。
 写了 `master`：用那个值（例如 `master: master_yz`）。不要读 `test`、`slug`、`aliases`，也不要从当前 HEAD 猜。
 
-用户这次给了完整目标分支名则用用户的。启动命令时始终带上 `--target <这个名字>`。
+用户这次给了完整目标分支名则用用户的。执行命令时始终带上 `--target <这个名字>`。
 
 ## 2. 标题
 
@@ -64,15 +65,14 @@ git rev-parse --verify --quiet "@{upstream}" || echo "无上游"
 git rev-list --count "@{upstream}..HEAD"
 ```
 
-- 当前分支就是目标分支：停下说明，不能对自己开 MR，不要开终端。
+- 当前分支就是目标分支：停下说明，不能对自己开 MR。
 - 没有上游，或本地领先远端：命令里要带推送。
 - 其余情况：只跑 `sw release`。
 - 有未提交改动也不要问、不要暂存；它们不会进这次 push。
 
-## 5. 在 IDE 终端里启动一条命令
+## 5. 在对话里执行一条命令
 
-把下面**整行**丢进用户可见的 IDE 终端并执行，然后立刻结束（Cursor 用后台终端、
-不要 await；其他宿主用等价的「用户能看见、不要等待」的启动方式）。
+自己执行，不要开终端、不要丢给用户。这条命令只建 MR，几条 API 请求就返回。
 
 未推送：
 
@@ -92,4 +92,5 @@ sw release <online|gray> --target <目标>
 `sw` 不存在时说明它随 SpecWeaver App 分发；缺 `glab` 或 `jq` 时让用户看命令自己的提示，
 不要改去直调 GitLab API。
 
-跟用户只说一句：命令已在终端启动，结果看终端。
+成功时命令末尾会打一行 `MR !编号  链接`，把它原样转给用户。命令报错就把命令自己的
+提示转述一遍，不要重试、不要换别的写法再试一次。

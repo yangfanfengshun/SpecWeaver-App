@@ -203,11 +203,8 @@ def add_entry(
         )
         if added or not path.exists():
             write_atomic(path, merged)
-        text_path = write_rendered(path, merged) if path.exists() else None
-    message = f"日报已更新：{path.resolve()}（新增 {added} 项）"
-    if text_path is not None:
-        message += f"，成品：{text_path.resolve()}"
-    print(message)
+    # 记录条目只写 Markdown。成品 txt 留给汇总，避免每记一条就覆盖一次。
+    print(f"日报已更新：{path.resolve()}（新增 {added} 项）")
     return 0
 
 
