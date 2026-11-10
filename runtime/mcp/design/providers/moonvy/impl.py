@@ -5,9 +5,11 @@ import gzip
 import hashlib
 import json
 import re
+from io import BytesIO
 from typing import Any
 
 import httpx
+from PIL import Image
 
 from common import (
     IMAGE_EXTENSIONS,
@@ -76,6 +78,40 @@ def _file_stem(name: str, node_id: str) -> str:
     safe = re.sub(r"[^\w\u4e00-\u9fff.-]+", "-", name).strip("-") or "slice"
     suffix = node_id.replace(":", "-")[:12] or "node"
     return f"{safe}--{suffix}"
+
+
+def _slice_filename(stem: str, item: dict[str, Any]) -> str:
+    if item.get("role") == "2x":
+        return f"{stem}@2x{item['extension']}"
+    return f"{stem}{item['extension']}"
+
+
+def _scaled_bytes(content: bytes, source_ratio: float, target_ratio: float) -> bytes:
+    if source_ratio == target_ratio:
+        return content
+    with Image.open(BytesIO(content)) as image:
+        image.load()
+        factor = target_ratio / source_ratio
+        resized = image.resize(
+            (
+                max(1, round(image.width * factor)),
+                max(1, round(image.height * factor)),
+            ),
+            Image.Resampling.LANCZOS,
+        )
+        buffer = BytesIO()
+        kind = (image.format or "PNG").upper()
+        if kind == "JPEG":
+            if resized.mode not in {"RGB", "L"}:
+                resized = resized.convert("RGB")
+            resized.save(buffer, format="JPEG", quality=90)
+        elif kind == "WEBP":
+            resized.save(buffer, format="WEBP")
+        elif kind == "GIF":
+            resized.save(buffer, format="GIF")
+        else:
+            resized.save(buffer, format="PNG")
+        return buffer.getvalue()
 
 
 async def _post_json(
@@ -422,18 +458,27 @@ async def download_slices(
             images = genome.get("images") if isinstance(genome.get("images"), dict) else {}
             slices = moonvy_slices(page, images)
         saved = []
+        cached: dict[str, bytes] = {}
         async with httpx.AsyncClient(timeout=120, follow_redirects=True) as client:
             for item in slices:
-                response = await client.get(item["url"])
-                response.raise_for_status()
+                url = item["url"]
+                content = cached.get(url)
+                if content is None:
+                    response = await client.get(url)
+                    response.raise_for_status()
+                    content = response.content
+                    cached[url] = content
                 name = _file_stem(item["layer_name"], item["layer_id"])
-                path = target_dir / f"{name}{item['extension']}"
-                atomic_write_bytes(path, response.content)
+                path = target_dir / _slice_filename(name, item)
+                atomic_write_bytes(
+                    path,
+                    _scaled_bytes(content, float(item["source_ratio"]), float(item["target_ratio"])),
+                )
                 saved.append({
                     "layer_id": item["layer_id"],
                     "layer_name": item["layer_name"],
                     "local_path": str(path),
-                    "source_url": item["url"],
+                    "source_url": url,
                 })
         return {
             "status": "success",

@@ -6,7 +6,6 @@ from urllib.parse import urlparse
 
 from design.schema import compact_num, node_type, num, solid_hex, wrap_document
 
-SLICE_FORMATS = ("svg", "max", "base")
 _EXTENSIONS = {
     "png": ".png",
     "jpg": ".jpg",
@@ -169,34 +168,77 @@ def _extension(image: dict[str, Any], url: str) -> str:
     return ".png"
 
 
+def _slice_image(
+    slices: dict[str, Any],
+    images: dict[str, Any],
+    key: str,
+) -> dict[str, Any] | None:
+    info = slices.get(key)
+    if not isinstance(info, dict):
+        return None
+    image = images.get(str(info.get("id") or ""))
+    if not isinstance(image, dict):
+        return None
+    url = str(image.get("url") or "")
+    if not url:
+        return None
+    try:
+        ratio = float(info.get("ratio") or 1)
+    except (TypeError, ValueError):
+        ratio = 1.0
+    if ratio <= 0:
+        ratio = 1.0
+    return {"url": url, "extension": _extension(image, url), "ratio": ratio}
+
+
+def _best_source(sources: list[dict[str, Any]], target: float) -> dict[str, Any]:
+    above = [item for item in sources if item["ratio"] >= target]
+    if above:
+        return min(above, key=lambda item: item["ratio"])
+    return max(sources, key=lambda item: item["ratio"])
+
+
+def _slice_output(
+    node: dict[str, Any],
+    source: dict[str, Any],
+    role: str,
+    target: float,
+) -> dict[str, Any]:
+    return {
+        "layer_id": str(node.get("id") or ""),
+        "layer_name": str(node.get("name") or "slice"),
+        "role": role,
+        "url": source["url"],
+        "extension": source["extension"],
+        "source_ratio": source["ratio"],
+        "target_ratio": target,
+    }
+
+
 def moonvy_slices(page: dict[str, Any], images: dict[str, Any]) -> list[dict[str, Any]]:
-    """只下载节点上标了 slices 的图层。优先 svg，其次 max，再 base。"""
+    """只下载标了 slices 的图层。位图落 1 倍和 2 倍，不保留 max 原图。"""
     found: list[dict[str, Any]] = []
 
     def walk(node: dict[str, Any]) -> None:
         slices = node.get("slices")
-        picked: dict[str, Any] | None = None
-        if isinstance(slices, dict):
-            for key in SLICE_FORMATS:
-                info = slices.get(key)
-                if not isinstance(info, dict):
-                    continue
-                image_id = str(info.get("id") or "")
-                image = images.get(image_id)
-                if not isinstance(image, dict):
-                    continue
-                url = str(image.get("url") or "")
-                if not url:
-                    continue
-                picked = {
-                    "layer_id": str(node.get("id") or image_id),
-                    "layer_name": str(node.get("name") or "slice"),
-                    "url": url,
-                    "extension": _extension(image, url),
-                }
-                break
-        if picked and picked["layer_id"]:
-            found.append(picked)
+        if isinstance(slices, dict) and node.get("id"):
+            raster = [
+                item
+                for item in (
+                    _slice_image(slices, images, "base"),
+                    _slice_image(slices, images, "max"),
+                )
+                if item
+            ]
+            chosen: list[dict[str, Any]] = []
+            if raster:
+                chosen.append(_slice_output(node, _best_source(raster, 1), "1x", 1))
+            svg = _slice_image(slices, images, "svg")
+            if svg:
+                chosen.append(_slice_output(node, svg, "svg", 1))
+            if raster:
+                chosen.append(_slice_output(node, _best_source(raster, 2), "2x", 2))
+            found.extend(chosen)
         for child in node.get("children") or []:
             if isinstance(child, dict):
                 walk(child)
