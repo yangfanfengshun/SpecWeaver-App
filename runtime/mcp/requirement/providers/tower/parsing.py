@@ -20,6 +20,7 @@ import mistune
 TOWER_BASE = "https://tower.im"
 URL_PATTERN = re.compile(r"https?://[^\s<>()\[\]{}\"']+")
 BUG_TAGS = {"bug"}
+BUG_CATEGORIES = {"bug管理"}
 MEMBER_TODO_URL_PATTERN = re.compile(
     r"^/members/(?P<guid>[0-9a-f]{32})/todos/"
     r"(?P<kind>uncompleted|completed|all)/?$",
@@ -510,12 +511,20 @@ def parse_tags(soup: BeautifulSoup) -> list[str]:
     return tags
 
 
+def _normalize_label(value: str) -> str:
+    return re.sub(r"\s+", "", value).strip("#[]【】").lower()
+
+
 def task_type_from_tags(tags: list[str]) -> str:
-    normalized = {
-        re.sub(r"\s+", "", tag).strip("#[]【】").lower()
-        for tag in tags
-    }
+    normalized = {_normalize_label(tag) for tag in tags}
     return "bug" if normalized & BUG_TAGS else "requirement"
+
+
+def task_type_for_todo(tags: list[str], sections: list[dict[str, str]]) -> str:
+    if task_type_from_tags(tags) == "bug":
+        return "bug"
+    categories = {_normalize_label(item.get("category", "")) for item in sections}
+    return "bug" if categories & BUG_CATEGORIES else "requirement"
 
 
 def decode_javascript_string(value: str) -> str:
@@ -558,6 +567,7 @@ def parse_stream_response(javascript: str) -> str:
 def parse_todo(soup: BeautifulSoup, url: str) -> dict:
     page = soup.select_one(".page-inner")
     tags = parse_tags(soup)
+    sections = parse_project_sections(soup)
     data = {
         "title": page.get("data-page-name", "") if page else "",
         "url": url,
@@ -565,9 +575,9 @@ def parse_todo(soup: BeautifulSoup, url: str) -> dict:
         "status": "进行中" if soup.select_one("[data-tooltip*='正在进行']") else "待处理",
         "comments": parse_comments(soup),
         "image_urls": parse_images(soup),
-        "project_sections": parse_project_sections(soup),
+        "project_sections": sections,
         "tags": tags,
-        "task_type": task_type_from_tags(tags),
+        "task_type": task_type_for_todo(tags, sections),
     }
     data["todo_id"] = text_of(soup.select_one(".original-text"))
     data["assignee"] = text_of(soup.select_one(".addition-content.has-assignee"))

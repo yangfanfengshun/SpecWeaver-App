@@ -21,8 +21,8 @@ description: 从需求任务读取元信息、正文、独立评论、子任务�
    `~/.specweaver/cache/tower/<任务ID>/tower-raw.md`，把脚本继续编排所需字段写到
    同目录 `tower-metadata.json`，把普通图片写到 `images/`；可读原文不嵌入 Base64
    元数据，视频、压缩包和其他文件不自动下载。
-4. 只以明确 `Bug` Tag 返回 `task_type: bug`；其他情况返回
-   `task_type: requirement`，不得按标题或分类猜。
+4. 明确 `Bug` Tag，或分类名是 `BUG管理`，返回 `task_type: bug`；其他情况返回
+   `task_type: requirement`。不得按标题、分组或其他分类猜。
 5. 工具结果只保留缓存路径、数量、来源摘要、读取状态和未解决事项，不把全文复制进
    MCP 返回。
 6. 独立核对内容时由 Agent 读取 `cache_file` 并查看全部 `image_paths`；图片失败时把

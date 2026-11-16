@@ -43,7 +43,7 @@ Skill 和完整收集决策表为准。
 - 需要分析 Tower 内容时，由 Agent 读取结果中的 `cache_file`。
 - Bug 或快速分析必须查看所有 `image_paths`；图片缓存为 `partial` 时保留缺失证据并明确报告。
 - 子任务默认只保留标题和链接；用户明确要求时再单独读取指定子任务。
-- 只有明确 `Bug` Tag 才是 `task_type: bug`，其他情况均为普通需求。
+- 明确 `Bug` Tag，或分类名是 `BUG管理`，才是 `task_type: bug`；其他情况均为普通需求。
 
 ## 2. 选择路线
 
